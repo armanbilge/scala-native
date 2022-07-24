@@ -3,12 +3,14 @@ package javalib.nio.channels
 import java.nio.channels._
 
 import java.nio.ByteBuffer
-import java.nio.file.{Files, Path, StandardOpenOption}
+import java.nio.file.{AccessDeniedException, Files, Path, StandardOpenOption}
 import java.io.File
 
 import org.junit.Test
 import org.junit.Assert._
+import org.junit.Assume._
 
+import org.scalanative.testsuite.utils.Platform
 import scalanative.junit.utils.AssertThrows.assertThrows
 import java.io.{FileInputStream, FileOutputStream}
 import java.io.RandomAccessFile
@@ -225,6 +227,24 @@ class FileChannelTest {
       channel.close()
       val readb = Files.readAllBytes(f)
       assertTrue(bytes sameElements readb)
+    }
+  }
+
+  @Test def fileChannelThrowsAccessDeniedForReadOnly(): Unit = {
+    assumeFalse(
+      "Not implemented for Windows",
+      Platform.isWindows
+    )
+    withTemporaryDirectory { dir =>
+      val f = dir.resolve("file")
+      Files.write(f, "hello, world".getBytes("UTF-8"))
+      f.toFile().setReadOnly()
+
+      assertThrows(
+        f.toString(),
+        classOf[AccessDeniedException],
+        FileChannel.open(f, StandardOpenOption.WRITE)
+      )
     }
   }
 
