@@ -243,7 +243,11 @@ class FileChannelTest {
       assertThrows(
         f.toString(),
         classOf[AccessDeniedException],
-        FileChannel.open(f, StandardOpenOption.WRITE)
+        FileChannel.open(
+          f,
+          StandardOpenOption.WRITE,
+          StandardOpenOption.TRUNCATE_EXISTING
+        )
       )
     }
   }
