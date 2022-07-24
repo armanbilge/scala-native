@@ -4,7 +4,9 @@ import java.nio.channels._
 
 import java.nio.ByteBuffer
 import java.nio.file.{AccessDeniedException, Files, Path, StandardOpenOption}
+import java.nio.file.attribute.PosixFilePermission
 import java.io.File
+import java.util.HashSet
 
 import org.junit.Test
 import org.junit.Assert._
@@ -238,7 +240,11 @@ class FileChannelTest {
     withTemporaryDirectory { dir =>
       val f = dir.resolve("file")
       Files.write(f, "hello, world".getBytes("UTF-8"))
-      f.toFile().setReadOnly()
+      val permissions = new HashSet[PosixFilePermission]()
+      permissions.add(PosixFilePermission.GROUP_READ)
+      permissions.add(PosixFilePermission.OTHERS_READ)
+      permissions.add(PosixFilePermission.OWNER_READ)
+      Files.setPosixFilePermissions(f, permissions)
 
       assertThrows(
         f.toString(),

@@ -1,6 +1,6 @@
 package java.nio.channels
 
-import java.nio.file.Files
+import java.nio.file.{Files, PosixException}
 
 import java.nio.{ByteBuffer, MappedByteBuffer, MappedByteBufferImpl}
 import java.nio.file.WindowsException
@@ -311,7 +311,11 @@ private[java] final class FileChannelImpl(
           unistd.ftruncate(fd.fd, size) == 0
         }
       if (!hasSucceded) {
-        throw new IOException("Failed to truncate file")
+        println("hmmm: " + errno.errno)
+        if (isWindows)
+          throw new IOException("Failed to truncate file")
+        else
+          throw PosixException(file.fold("")(_.getPath()), errno.errno)
       }
       if (currentPosition > size) position(size)
       else position(currentPosition)
