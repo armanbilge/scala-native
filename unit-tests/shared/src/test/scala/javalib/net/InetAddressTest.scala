@@ -98,6 +98,12 @@ class InetAddressTest {
       classOf[UnknownHostException],
       InetAddress.getByName("not.example.com")
     )
+
+    assertThrows(
+      "getByName(foo)",
+      classOf[UnknownHostException],
+      InetAddress.getByName("foo")
+    )
   }
 
   @Test def getByNameInvalidIPv4Addresses(): Unit = {
