@@ -41,9 +41,9 @@ object Boxes {
     if (o == null) Intrinsics.castIntToRawSize(0)
     else o.asInstanceOf[USize].rawSize
 
-  @inline def boxToUByte(v: Byte): UByte = new UByte(v)
+  @inline def boxToUByte(v: Byte): UByte = UByte(v)
   @inline def unboxToUByte(o: java.lang.Object): Byte =
-    if (o == null) 0.toByte else o.asInstanceOf[UByte].underlying
+    if (o == null) 0.toByte else o.asInstanceOf[UByte].toByte
 
   @inline def boxToUShort(v: Short): UShort = new UShort(v)
   @inline def unboxToUShort(o: java.lang.Object): Short =

@@ -1,47 +1,55 @@
 package scala.scalanative
 package unsigned
 
-import scalanative.runtime.Intrinsics.castIntToRawSizeUnsigned
+import scalanative.runtime.Intrinsics.{
+  divUInt,
+  remUInt,
+  uintToFloat,
+  uintToDouble,
+  castIntToRawSizeUnsigned
+}
+import java.lang.{Integer => JInteger}
 
-/** `UByte`, a 8-bit unsigned integer. */
-final class UByte private[scalanative] (
-    private[scalanative] val underlying: Byte
-) extends java.io.Serializable
-    with Comparable[UByte] {
+/** `UInt`, a 32-bit unsigned integer. */
+final class UInt private[scalanative] (private[scalanative] val underlying: Int)
+    extends java.io.Serializable
+    with Comparable[UInt] {
 
-  @inline final def toByte: Byte = underlying
-  @inline final def toShort: Short = toInt.toShort
-  @inline final def toChar: Char = toInt.toChar
-  @inline final def toInt: Int = underlying & 0xff
-  @inline final def toLong: Long = toInt.toLong
-  @inline final def toFloat: Float = toInt.toFloat
-  @inline final def toDouble: Double = toInt.toDouble
+  @inline final def toByte: Byte = underlying.toByte
+  @inline final def toShort: Short = underlying.toShort
+  @inline final def toChar: Char = underlying.toChar
+  @inline final def toInt: Int = underlying
+  @inline final def toLong: Long = JInteger.toUnsignedLong(underlying)
+  @inline final def toFloat: Float = uintToFloat(underlying)
+  @inline final def toDouble: Double = uintToDouble(underlying)
 
-  @inline final def toUByte: UByte = this
+  @inline final def toUByte: UByte = UByte(toByte)
   @inline final def toUShort: UShort = new UShort(toShort)
-  @inline final def toUInt: UInt = new UInt(toInt)
+  @inline final def toUInt: UInt = this
   @inline final def toULong: ULong = new ULong(toLong)
-  @inline final def toUSize: USize = new USize(castIntToRawSizeUnsigned(toInt))
+  @inline final def toUSize: USize = new USize(
+    castIntToRawSizeUnsigned(underlying)
+  )
 
   /** Returns the bitwise negation of this value.
    *  @example
-   *    {{{~5 == -6 // in binary: ~00000101 == // 11111010}}}
+   *    {{{~5 == 4294967290 // in binary: ~00000101 == // 11111010}}}
    */
-  @inline final def unary_~ : UInt = ~toUInt
+  @inline final def unary_~ : UInt = new UInt(~underlying)
 
   /** Returns this value bit-shifted left by the specified number of bits,
    *  filling in the new right bits with zeroes.
    *  @example
    *    {{{6 << 3 == 48 // in binary: 0110 << 3 == 0110000}}}
    */
-  @inline final def <<(x: Int): UInt = toUInt << x
+  @inline final def <<(x: Int): UInt = new UInt(underlying << x)
 
   /** Returns this value bit-shifted left by the specified number of bits,
    *  filling in the new right bits with zeroes.
    *  @example
    *    {{{6 << 3 == 48 // in binary: 0110 << 3 == 0110000}}}
    */
-  @inline final def <<(x: Long): UInt = toUInt << x
+  @inline final def <<(x: Long): UInt = new UInt(underlying << x.toInt)
 
   /** Returns this value bit-shifted right by the specified number of bits,
    *  filling the new left bits with zeroes.
@@ -51,7 +59,7 @@ final class UByte private[scalanative] (
    *    {{{ 4294967275 >>> 3 == 536870909 // in binary: 11111111 11111111
    *    11111111 11101011 >>> 3 == // 00011111 11111111 11111111 11111101 }}}
    */
-  @inline final def >>>(x: Int): UInt = toUInt >>> x
+  @inline final def >>>(x: Int): UInt = new UInt(underlying >>> x)
 
   /** Returns this value bit-shifted right by the specified number of bits,
    *  filling the new left bits with zeroes.
@@ -61,7 +69,7 @@ final class UByte private[scalanative] (
    *    {{{ 4294967275 >>> 3 == 536870909 // in binary: 11111111 11111111
    *    11111111 11101011 >>> 3 == // 00011111 11111111 11111111 11111101 }}}
    */
-  @inline final def >>>(x: Long): UInt = toUInt >>> x
+  @inline final def >>>(x: Long): UInt = new UInt(underlying >>> x.toInt)
 
   /** Returns this value bit-shifted left by the specified number of bits,
    *  filling in the right bits with the same value as the left-most bit of
@@ -70,7 +78,7 @@ final class UByte private[scalanative] (
    *    {{{ 4294967275 >> 3 == 4294967293 // in binary: 11111111 11111111
    *    11111111 11101011 >> 3 == // 11111111 11111111 11111111 11111101 }}}
    */
-  @inline final def >>(x: Int): UInt = toUInt >> x
+  @inline final def >>(x: Int): UInt = new UInt(underlying >> x)
 
   /** Returns this value bit-shifted left by the specified number of bits,
    *  filling in the right bits with the same value as the left-most bit of
@@ -79,230 +87,229 @@ final class UByte private[scalanative] (
    *    {{{ 4294967275 >> 3 == 4294967293 // in binary: 11111111 11111111
    *    11111111 11101011 >> 3 == // 11111111 11111111 11111111 11111101 }}}
    */
-  @inline final def >>(x: Long): UInt = toUInt >> x
+  @inline final def >>(x: Long): UInt = new UInt(underlying >> x.toInt)
 
-  @inline final override def compareTo(x: UByte): Int =
-    (underlying & 0xff) - (x.underlying & 0xff)
-
-  /** Returns `true` if this value is equal to x, `false` otherwise. */
-  @inline final def ==(x: UByte): Boolean = underlying == x.underlying
+  @inline final override def compareTo(x: UInt): Int =
+    JInteger.compareUnsigned(underlying, x.underlying)
 
   /** Returns `true` if this value is equal to x, `false` otherwise. */
-  @inline final def ==(x: UShort): Boolean = toUInt == x.toUInt
+  @inline final def ==(x: UByte): Boolean = this == x.toUInt
 
   /** Returns `true` if this value is equal to x, `false` otherwise. */
-  @inline final def ==(x: UInt): Boolean = toUInt == x
+  @inline final def ==(x: UShort): Boolean = this == x.toUInt
 
   /** Returns `true` if this value is equal to x, `false` otherwise. */
-  @inline final def ==(x: ULong): Boolean = toULong == x
+  @inline final def ==(x: UInt): Boolean = underlying == x.underlying
+
+  /** Returns `true` if this value is equal to x, `false` otherwise. */
+  @inline final def ==(x: ULong): Boolean = this.toULong == x
 
   /** Returns `true` if this value is not equal to x, `false` otherwise. */
-  @inline final def !=(x: UByte): Boolean = underlying != x.underlying
+  @inline final def !=(x: UByte): Boolean = this != x.toUInt
 
   /** Returns `true` if this value is not equal to x, `false` otherwise. */
-  @inline final def !=(x: UShort): Boolean = toUInt != x.toUInt
+  @inline final def !=(x: UShort): Boolean = this != x.toUInt
 
   /** Returns `true` if this value is not equal to x, `false` otherwise. */
-  @inline final def !=(x: UInt): Boolean = toUInt != x
+  @inline final def !=(x: UInt): Boolean = underlying != x.underlying
 
   /** Returns `true` if this value is not equal to x, `false` otherwise. */
-  @inline final def !=(x: ULong): Boolean = toULong != x
+  @inline final def !=(x: ULong): Boolean = this.toULong != x
 
   /** Returns `true` if this value is less than x, `false` otherwise. */
-  @inline final def <(x: UByte): Boolean = toUInt < x.toUInt
+  @inline final def <(x: UByte): Boolean = this < x.toUInt
 
   /** Returns `true` if this value is less than x, `false` otherwise. */
-  @inline final def <(x: UShort): Boolean = toUInt < x.toUInt
+  @inline final def <(x: UShort): Boolean = this < x.toUInt
 
   /** Returns `true` if this value is less than x, `false` otherwise. */
-  @inline final def <(x: UInt): Boolean = toUInt < x
+  @inline final def <(x: UInt): Boolean = compareTo(x) < 0
 
   /** Returns `true` if this value is less than x, `false` otherwise. */
-  @inline final def <(x: ULong): Boolean = toULong < x
+  @inline final def <(x: ULong): Boolean = this.toULong < x
 
   /** Returns `true` if this value is less than or equal to x, `false`
    *  otherwise.
    */
-  @inline final def <=(x: UByte): Boolean = toUInt <= x.toUInt
+  @inline final def <=(x: UByte): Boolean = this <= x.toUInt
 
   /** Returns `true` if this value is less than or equal to x, `false`
    *  otherwise.
    */
-  @inline final def <=(x: UShort): Boolean = toUInt <= x.toUInt
+  @inline final def <=(x: UShort): Boolean = this <= x.toUInt
 
   /** Returns `true` if this value is less than or equal to x, `false`
    *  otherwise.
    */
-  @inline final def <=(x: UInt): Boolean = toUInt <= x
+  @inline final def <=(x: UInt): Boolean = compareTo(x) <= 0
 
   /** Returns `true` if this value is less than or equal to x, `false`
    *  otherwise.
    */
-  @inline final def <=(x: ULong): Boolean = toULong <= x
+  @inline final def <=(x: ULong): Boolean = this.toULong <= x
 
   /** Returns `true` if this value is greater than x, `false` otherwise. */
-  @inline final def >(x: UByte): Boolean = toUInt > x.toUInt
+  @inline final def >(x: UByte): Boolean = this > x.toUInt
 
   /** Returns `true` if this value is greater than x, `false` otherwise. */
-  @inline final def >(x: UShort): Boolean = toUInt > x.toUInt
+  @inline final def >(x: UShort): Boolean = this > x.toUInt
 
   /** Returns `true` if this value is greater than x, `false` otherwise. */
-  @inline final def >(x: UInt): Boolean = toUInt > x
+  @inline final def >(x: UInt): Boolean = compareTo(x) > 0
 
   /** Returns `true` if this value is greater than x, `false` otherwise. */
-  @inline final def >(x: ULong): Boolean = toULong > x
+  @inline final def >(x: ULong): Boolean = this.toULong > x
 
   /** Returns `true` if this value is greater than or equal to x, `false`
    *  otherwise.
    */
-  @inline final def >=(x: UByte): Boolean = toUInt >= x.toUInt
+  @inline final def >=(x: UByte): Boolean = this >= x.toUInt
 
   /** Returns `true` if this value is greater than or equal to x, `false`
    *  otherwise.
    */
-  @inline final def >=(x: UShort): Boolean = toUInt >= x.toUInt
+  @inline final def >=(x: UShort): Boolean = this >= x.toUInt
 
   /** Returns `true` if this value is greater than or equal to x, `false`
    *  otherwise.
    */
-  @inline final def >=(x: UInt): Boolean = toUInt >= x
+  @inline final def >=(x: UInt): Boolean = compareTo(x) >= 0
 
   /** Returns `true` if this value is greater than or equal to x, `false`
    *  otherwise.
    */
-  @inline final def >=(x: ULong): Boolean = toULong >= x
+  @inline final def >=(x: ULong): Boolean = this.toULong >= x
 
   /** Returns the bitwise OR of this value and `x`. */
-  @inline final def |(x: UByte): UInt = this.toUInt | x.toUInt
+  @inline final def |(x: UByte): UInt = this | x.toUInt
 
   /** Returns the bitwise OR of this value and `x`. */
-  @inline final def |(x: UShort): UInt = this.toUInt | x.toUInt
+  @inline final def |(x: UShort): UInt = this | x.toUInt
 
   /** Returns the bitwise OR of this value and `x`. */
-  @inline final def |(x: UInt): UInt = this.toUInt | x
+  @inline final def |(x: UInt): UInt = new UInt(underlying | x.underlying)
 
   /** Returns the bitwise OR of this value and `x`. */
   @inline final def |(x: ULong): ULong = this.toULong | x
 
   /** Returns the bitwise AND of this value and `x`. */
-  @inline final def &(x: UByte): UInt = this.toUInt & x.toUInt
+  @inline final def &(x: UByte): UInt = this & x.toUInt
 
   /** Returns the bitwise AND of this value and `x`. */
-  @inline final def &(x: UShort): UInt = this.toUInt & x.toUInt
+  @inline final def &(x: UShort): UInt = this & x.toUInt
 
   /** Returns the bitwise AND of this value and `x`. */
-  @inline final def &(x: UInt): UInt = this.toUInt & x
+  @inline final def &(x: UInt): UInt = new UInt(underlying & x.underlying)
 
   /** Returns the bitwise AND of this value and `x`. */
   @inline final def &(x: ULong): ULong = this.toULong & x
 
   /** Returns the bitwise XOR of this value and `x`. */
-  @inline final def ^(x: UByte): UInt = this.toUInt ^ x.toUInt
+  @inline final def ^(x: UByte): UInt = this ^ x.toUInt
 
   /** Returns the bitwise XOR of this value and `x`. */
-  @inline final def ^(x: UShort): UInt = this.toUInt ^ x.toUInt
+  @inline final def ^(x: UShort): UInt = this ^ x.toUInt
 
   /** Returns the bitwise XOR of this value and `x`. */
-  @inline final def ^(x: UInt): UInt = this.toUInt ^ x
+  @inline final def ^(x: UInt): UInt = new UInt(underlying ^ x.underlying)
 
   /** Returns the bitwise XOR of this value and `x`. */
   @inline final def ^(x: ULong): ULong = this.toULong ^ x
 
   /** Returns the sum of this value and `x`. */
-  @inline final def +(x: UByte): UInt = this.toUInt + x.toUInt
+  @inline final def +(x: UByte): UInt = this + x.toUInt
 
   /** Returns the sum of this value and `x`. */
-  @inline final def +(x: UShort): UInt = this.toUInt + x.toUInt
+  @inline final def +(x: UShort): UInt = this + x.toUInt
 
   /** Returns the sum of this value and `x`. */
-  @inline final def +(x: UInt): UInt = this.toUInt + x
+  @inline final def +(x: UInt): UInt = new UInt(underlying + x.underlying)
 
   /** Returns the sum of this value and `x`. */
   @inline final def +(x: ULong): ULong = this.toULong + x
 
   /** Returns the difference of this value and `x`. */
-  @inline final def -(x: UByte): UInt = this.toUInt - x.toUInt
+  @inline final def -(x: UByte): UInt = this - x.toUInt
 
   /** Returns the difference of this value and `x`. */
-  @inline final def -(x: UShort): UInt = this.toUInt - x.toUInt
+  @inline final def -(x: UShort): UInt = this - x.toUInt
 
   /** Returns the difference of this value and `x`. */
-  @inline final def -(x: UInt): UInt = this.toUInt - x
+  @inline final def -(x: UInt): UInt = new UInt(underlying - x.underlying)
 
   /** Returns the difference of this value and `x`. */
   @inline final def -(x: ULong): ULong = this.toULong - x
 
   /** Returns the product of this value and `x`. */
-  @inline final def *(x: UByte): UInt = this.toUInt * x.toUInt
+  @inline final def *(x: UByte): UInt = this * x.toUInt
 
   /** Returns the product of this value and `x`. */
-  @inline final def *(x: UShort): UInt = this.toUInt * x.toUInt
+  @inline final def *(x: UShort): UInt = this * x.toUInt
 
   /** Returns the product of this value and `x`. */
-  @inline final def *(x: UInt): UInt = this.toUInt * x
+  @inline final def *(x: UInt): UInt = new UInt(underlying * x.underlying)
 
   /** Returns the product of this value and `x`. */
   @inline final def *(x: ULong): ULong = this.toULong * x
 
   /** Returns the quotient of this value and `x`. */
-  @inline final def /(x: UByte): UInt = this.toUInt / x.toUInt
+  @inline final def /(x: UByte): UInt = this / x.toUInt
 
   /** Returns the quotient of this value and `x`. */
-  @inline final def /(x: UShort): UInt = this.toUInt / x.toUInt
+  @inline final def /(x: UShort): UInt = this / x.toUInt
 
   /** Returns the quotient of this value and `x`. */
-  @inline final def /(x: UInt): UInt = this.toUInt / x
+  @inline final def /(x: UInt): UInt =
+    new UInt(divUInt(underlying, x.underlying))
 
   /** Returns the quotient of this value and `x`. */
   @inline final def /(x: ULong): ULong = this.toULong / x
 
   /** Returns the remainder of the division of this value by `x`. */
-  @inline final def %(x: UByte): UInt = this.toUInt % x.toUInt
+  @inline final def %(x: UByte): UInt = this % x.toUInt
 
   /** Returns the remainder of the division of this value by `x`. */
-  @inline final def %(x: UShort): UInt = this.toUInt % x.toUInt
+  @inline final def %(x: UShort): UInt = this % x.toUInt
 
   /** Returns the remainder of the division of this value by `x`. */
-  @inline final def %(x: UInt): UInt = this.toUInt % x
+  @inline final def %(x: UInt): UInt =
+    new UInt(remUInt(underlying, x.underlying))
 
   /** Returns the remainder of the division of this value by `x`. */
   @inline final def %(x: ULong): ULong = this.toULong % x
 
-  @inline final override def toString(): String = toInt.toString()
+  @inline final override def toString(): String =
+    JInteger.toUnsignedString(underlying)
 
   @inline override def hashCode(): Int = underlying.##
 
   @inline override def equals(obj: Any): Boolean = obj match {
-    case that: UByte => this.underlying == that.underlying
-    case _           => false
+    case that: UInt => this.underlying == that.underlying
+    case _          => false
   }
 
   // "Rich" API
 
-  @inline final def max(that: UByte): UByte =
-    this.toUInt.max(that.toUInt).toUByte
-  @inline final def min(that: UByte): UByte =
-    this.toUInt.min(that.toUInt).toUByte
+  @inline final def max(that: UInt): UInt = if (this >= that) this else that
+  @inline final def min(that: UInt): UInt = if (this <= that) this else that
 
-  @inline final def toBinaryString: String = toUInt.toBinaryString
-  @inline final def toHexString: String = toUInt.toHexString
-  @inline final def toOctalString: String = toUInt.toOctalString
+  @inline final def toBinaryString: String = toInt.toBinaryString
+  @inline final def toHexString: String = toInt.toHexString
+  @inline final def toOctalString: String = toInt.toOctalString
 }
 
-object UByte {
+object UInt {
 
-  /** The smallest value representable as a UByte. */
-  final val MinValue = new UByte(0.toByte)
+  /** The smallest value representable as a UInt. */
+  final val MinValue = new UInt(0)
 
-  /** The largest value representable as a UByte. */
-  final val MaxValue = new UByte((-1).toByte)
+  /** The largest value representable as a UInt. */
+  final val MaxValue = new UInt(-1)
 
-  /** The String representation of the scala.UByte companion object. */
-  override def toString(): String = "object scala.UByte"
+  /** The String representation of the scala.UInt companion object. */
+  override def toString(): String = "object scala.UInt"
 
-  /** Language mandated coercions from UByte to "wider" types. */
+  /** Language mandated coercions from UInt to "wider" types. */
   import scala.language.implicitConversions
-  implicit def ubyte2ushort(x: UByte): UShort = x.toUShort
-  implicit def ubyte2uint(x: UByte): UInt = x.toUInt
-  implicit def ubyte2ulong(x: UByte): ULong = x.toULong
+  implicit def uint2ulong(x: UInt): ULong = x.toULong
 }
